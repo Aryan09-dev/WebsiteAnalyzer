@@ -5,6 +5,13 @@
     <ProjectReference Include="..\WebsiteAnalyzer.Domain\WebsiteAnalyzer.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+    <Folder Include="AI\" />
+    <Folder Include="WebCrawler\" />
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
