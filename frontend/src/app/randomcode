@@ -1,0 +1,60 @@
+# <nav className=" fixed top-0 left-0 w-full bg-white border-b
+#              border-gray-200 shadow-md z-50">
+#                 <div className="max-w-7xl  mx-auto px-4 sm:px-6 lg:px-8">
+#                     <div className="flex justify-between items-center h-16">
+#                         <div className="flex items-center gap-2">
+#                             <div className="w-8 h-8 bg-primaryText 
+#                             rounded-lg flex items-center justify-center">
+#                                 <Code2 className="w-5 h-5 text-white" />
+#                             </div>
+#                             <span className="font-bold font-montserrat  text-xl text-primaryText">
+#                                 BugAnalyzer AI</span>
+#                         </div>
+#                         <div className="hidden md:flex items-center gap-8">
+                            
+#                             <a href="#"
+#                                 className="text-primaryText hover:text-accentBlue 
+#                                 font-montserrat font-bold transition-colors">
+#                                 Home</a>
+#                             <a href="#features"
+#                                 className="text-primaryText hover:text-accentBlue
+#                                  font-montserrat font-bold transition-colors">
+#                                 Features</a>
+#                             <a href="#how-it-works"
+#                                 className="text-primaryText hover:text-accentBlue
+#                                 font-montserrat font-bold transition-colors">
+#                                 How It Works</a>
+#                             <a href="#reports"
+#                                 className="text-primaryText hover:text-accentBlue 
+#                                 font-montserrat font-bold transition-colors">
+#                                 Reports</a>
+#                             <button
+#                                 onClick={() => onNavigate('login')}
+#                                 className="
+#                                 border-brandBlue
+#                                 text-primaryText
+#                                 font-montserrat font-bold
+#                                 px-4 py-2 rounded-md
+#                                 transition-all duration-200
+#                                 hover:bg-brandBlue
+#                                 hover:text-white "
+
+#                             >
+#                                 <h3 className="font-bold">Login</h3>
+#                             </button>
+#                             <button
+#                                 onClick={() => onNavigate("new-scan")}
+#                                 className="  border-brandBlue
+#                                                 text-brandBlue
+#                                                 font-montserrat 
+#                                                 px-4 py-2 rounded-md
+#                                                 transition-all duration-200
+#                                                 hover:bg-brandBlue
+#                                                 hover:text-white"
+#                             >
+#                                 <h3 className="">Start Free Scan</h3>
+#                             </button>
+#                         </div>
+#                     </div>
+#                 </div>
+#             </nav>
