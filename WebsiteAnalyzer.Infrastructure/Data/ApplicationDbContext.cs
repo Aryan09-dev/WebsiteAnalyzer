@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using WebsiteAnalyzer.Domain.Entities;
 
 namespace WebsiteAnalyzer.Infrastructure.Data
@@ -20,5 +19,6 @@ namespace WebsiteAnalyzer.Infrastructure.Data
         public DbSet<PerformanceMetric> Performance_Metrics { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<AIRecommendation> AI_Recommendations { get; set; }
+        public DbSet<Role> Roles { get; set; }
     }
 }
