@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add Services
 // =========================
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-
+builder.Services.AddHttpClient<IWebsiteScanRepository, WebsiteScanRepository>();
 // Controllers
 builder.Services.AddControllers();
 

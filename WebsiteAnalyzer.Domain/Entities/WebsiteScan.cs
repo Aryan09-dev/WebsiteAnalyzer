@@ -1,4 +1,6 @@
-﻿namespace WebsiteAnalyzer.Domain.Entities
+﻿using WebsiteAnalyzer.Domain.Enums;
+
+namespace WebsiteAnalyzer.Domain.Entities
 {
     public class WebsiteScan
     {
@@ -6,7 +8,7 @@
         public int User_Id { get; set; }
         public string Website_Url { get; set; } = null!;
         public string Scan_Type { get; set; } = null!;
-        public string Scan_Status { get; set; } = null!;
+        public ScanStatus Scan_Status { get; set; }
 
         public int? Performance_Score { get; set; }
         public int? Security_Score { get; set; }
