@@ -8,7 +8,6 @@
   <ItemGroup>
     <Folder Include="AI\" />
     <Folder Include="WebCrawler\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <ItemGroup>

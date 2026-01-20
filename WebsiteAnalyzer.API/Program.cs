@@ -1,11 +1,14 @@
 using WebsiteAnalyzer.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using WebsiteAnalyzer.Application.Interfaces;
+using WebsiteAnalyzer.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================
 // Add Services
 // =========================
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 // Controllers
 builder.Services.AddControllers();

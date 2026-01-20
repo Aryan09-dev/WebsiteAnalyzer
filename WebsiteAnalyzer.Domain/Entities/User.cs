@@ -12,5 +12,7 @@
         public DateTime? Modified_On { get; set; }
         public bool Is_Active { get; set; }
         public bool Is_Deleted { get; set; }
+
+        public Role Role { get; set; }
     }
 }

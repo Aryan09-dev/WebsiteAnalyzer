@@ -2,7 +2,7 @@
 {
     public class Report
     {
-        public int Report_Id { get; set; }
+        public int Id { get; set; }
 
         public int Scan_Id { get; set; }
         public string Report_Type { get; set; } = null!;

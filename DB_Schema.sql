@@ -3,7 +3,7 @@
     Full_Name NVARCHAR(100) NOT NULL,
     Email NVARCHAR(150) NOT NULL,
     Password_Hash NVARCHAR(255) NOT NULL,
-    Role NVARCHAR(20) NOT NULL,
+    Role_Id INT NOT NULL,
 
     Created_On DATETIME NOT NULL,
     Modified_On DATETIME NOT NULL,
@@ -153,4 +153,15 @@ CREATE TABLE AI_Recommendations (
 
     CONSTRAINT FK_AIRecommendations_AutomatedIssues
         FOREIGN KEY (Issue_Id) REFERENCES Automated_Issues(Id)
+);
+
+CREATE TABLE Roles (
+    Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    Role_Name NVARCHAR(50) NOT NULL,
+    Role_Description NVARCHAR(200) NULL,
+
+    Created_On DATETIME NOT NULL,
+    Modified_On DATETIME NULL,
+    Is_Active BIT NOT NULL,
+    Is_Deleted BIT NOT NULL
 );
