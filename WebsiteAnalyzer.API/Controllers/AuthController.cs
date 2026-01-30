@@ -9,10 +9,14 @@ namespace WebsiteAnalyzer.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthRepository _authRepository;
+        private readonly IJwtService _jwtService;
 
-        public AuthController(IAuthRepository authRepository)
+        public AuthController(
+            IAuthRepository authRepository,
+            IJwtService jwtService)
         {
             _authRepository = authRepository;
+            _jwtService = jwtService;
         }
 
         // ---------------------------
@@ -21,16 +25,19 @@ namespace WebsiteAnalyzer.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var result = await _authRepository.RegisterAsync(dto);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            if (result == null)
-                return BadRequest("User already exists.");
+            var user = await _authRepository.RegisterAsync(dto);
+
+            if (user == null)
+                return BadRequest("User already exists");
 
             return Ok(new
             {
                 Message = "User registered successfully",
-                result.Id,
-                result.Email
+                UserId = user.Id,
+                Email = user.Email
             });
         }
 
@@ -40,14 +47,20 @@ namespace WebsiteAnalyzer.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var user = await _authRepository.LoginAsync(dto);
 
             if (user == null)
-                return Unauthorized("Invalid credentials");
+                return Unauthorized("Invalid email or password");
+
+            var token = _jwtService.GenerateToken(user);
 
             return Ok(new
             {
                 Message = "Login successful",
+                Token = token,
                 UserId = user.Id,
                 Email = user.Email,
                 Role = user.Role_Id

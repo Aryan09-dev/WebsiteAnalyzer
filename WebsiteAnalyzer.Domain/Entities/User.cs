@@ -1,4 +1,6 @@
-﻿namespace WebsiteAnalyzer.Domain.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WebsiteAnalyzer.Domain.Entities
 {
     public class User
     {
@@ -6,6 +8,8 @@
         public string Full_Name { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string Password_Hash { get; set; } = null!;
+
+        [Column("Role_Id")]
         public int Role_Id { get; set; }
 
         public DateTime Created_On { get; set; }
@@ -13,6 +17,7 @@
         public bool Is_Active { get; set; }
         public bool Is_Deleted { get; set; }
 
+        [ForeignKey("Role_Id")]
         public Role Role { get; set; }
     }
 }

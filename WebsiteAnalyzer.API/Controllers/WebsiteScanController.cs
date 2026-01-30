@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebsiteAnalyzer.Application.DTOs;
 using WebsiteAnalyzer.Application.Interfaces;
 
 namespace WebsiteAnalyzer.API.Controllers
@@ -13,15 +12,6 @@ namespace WebsiteAnalyzer.API.Controllers
         public WebsiteScanController(IWebsiteScanRepository scanRepository)
         {
             _scanRepository = scanRepository;
-        }
-
-        // POST: api/scan/start
-        [HttpPost("analyze")]
-        public async Task<IActionResult> AnalyzeWebsite([FromBody] StartScanDto dto)
-        {
-            var result = await _scanRepository.AnalyzeAsync(dto);
-
-            return Ok(result);
         }
     }
 }

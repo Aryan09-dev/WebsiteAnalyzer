@@ -1,6 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using WebsiteAnalyzer.Application.DTOs;
 using WebsiteAnalyzer.Application.Interfaces;
 using WebsiteAnalyzer.Domain.Entities;
@@ -11,6 +10,7 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
     public class AuthRepository : IAuthRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly PasswordHasher<User> _passwordHasher = new();
 
         public AuthRepository(ApplicationDbContext context)
         {
@@ -19,6 +19,8 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
 
         public async Task<User> RegisterAsync(RegisterDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
+
             bool userExists = await _context.Users
                 .AnyAsync(u => u.Email == dto.Email && !u.Is_Deleted);
 
@@ -29,13 +31,16 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
             {
                 Full_Name = dto.Full_Name,
                 Email = dto.Email,
-                Password_Hash = HashPassword(dto.Password),
                 Role_Id = dto.Role_Id,
                 Created_On = DateTime.Now,
                 Modified_On = DateTime.Now,
                 Is_Active = true,
                 Is_Deleted = false
             };
+
+            user.Password_Hash = _passwordHasher.HashPassword(
+                user,
+                dto.Password);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -45,14 +50,13 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
 
         public async Task<User> LoginAsync(LoginDto dto)
         {
-            string hashedPassword = HashPassword(dto.Password);
+            dto.Email = dto.Email.Trim().ToLower();
 
             var user = await (
                 from u in _context.Users
                 join r in _context.Roles
                     on u.Role_Id equals r.Id
                 where u.Email == dto.Email
-                      && u.Password_Hash == hashedPassword
                       && u.Is_Active
                       && !u.Is_Deleted
                 select new User
@@ -63,7 +67,6 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
                     Password_Hash = u.Password_Hash,
                     Role_Id = u.Role_Id,
                     Role = r,
-
                     Created_On = u.Created_On,
                     Modified_On = u.Modified_On,
                     Is_Active = u.Is_Active,
@@ -71,15 +74,15 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
                 }
             ).FirstOrDefaultAsync();
 
+            var result = _passwordHasher.VerifyHashedPassword(
+                user,
+                user.Password_Hash,
+                dto.Password);
+
+            if (result == PasswordVerificationResult.Failed)
+                return null;
+
             return user;
-        }
-
-
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
         }
     }
 }

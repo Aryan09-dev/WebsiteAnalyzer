@@ -2,6 +2,7 @@ using WebsiteAnalyzer.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using WebsiteAnalyzer.Application.Interfaces;
 using WebsiteAnalyzer.Infrastructure.Repositories;
+using WebsiteAnalyzer.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // =========================
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddHttpClient<IWebsiteScanRepository, WebsiteScanRepository>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 // Controllers
 builder.Services.AddControllers();
 
