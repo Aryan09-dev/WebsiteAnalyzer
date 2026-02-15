@@ -63,6 +63,7 @@ namespace WebsiteAnalyzer.API.Controllers
                 Token = token,
                 UserId = user.Id,
                 Email = user.Email,
+                UserName = user.Full_Name,
                 Role = user.Role_Id
             });
         }

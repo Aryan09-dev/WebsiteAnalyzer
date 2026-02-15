@@ -1,4 +1,6 @@
-﻿namespace WebsiteAnalyzer.Domain.Entities
+﻿using WebsiteAnalyzer.Domain.Enums;
+
+namespace WebsiteAnalyzer.Domain.Entities
 {
     public class AutomatedIssue
     {
@@ -10,7 +12,7 @@
         public string Issue_Category { get; set; } = null!;
         public string Issue_Title { get; set; } = null!;
         public string? Issue_Description { get; set; }
-        public string Severity { get; set; } = null!;
+        public Severity Severity { get; set; }
         public string? AI_Explanation { get; set; }
         public string? Suggested_Fix { get; set; }
 

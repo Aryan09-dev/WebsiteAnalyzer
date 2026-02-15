@@ -74,6 +74,9 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
                 }
             ).FirstOrDefaultAsync();
 
+            if (user == null)
+                return null;
+
             var result = _passwordHasher.VerifyHashedPassword(
                 user,
                 user.Password_Hash,

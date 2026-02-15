@@ -20,11 +20,13 @@ namespace WebsiteAnalyzer.Application.Services
         public string GenerateToken(User user)
         {
             var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.Role_Name)
-        };
+{
+    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+    new Claim("userId", user.Id.ToString()),
+    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+    new Claim("username", user.Full_Name),
+    new Claim("role", user.Role?.Role_Name ?? "User")
+};
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_config["Jwt:Key"])
