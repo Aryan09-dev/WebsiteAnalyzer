@@ -45,6 +45,7 @@ namespace WebsiteAnalyzer.Application.Services
             return new AnalyzeScanResponseDto
             {
                 ScanId = updatedScan.Id,
+                Website_Url = updatedScan.Website_Url,
                 ScanStatus = updatedScan.Scan_Status,
                 Performance_Score = updatedScan.Performance_Score ?? 0,
                 Security_Score = updatedScan.Security_Score ?? 0,
