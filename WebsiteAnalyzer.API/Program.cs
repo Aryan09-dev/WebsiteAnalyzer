@@ -7,6 +7,7 @@ using WebsiteAnalyzer.Application.Interfaces;
 using WebsiteAnalyzer.Application.Services;
 using WebsiteAnalyzer.Infrastructure.Data;
 using WebsiteAnalyzer.Infrastructure.Repositories;
+using WebsiteAnalyzer.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,7 @@ builder.Services.AddScoped<IWebsiteScanRepository, WebsiteScanRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ScanAnalyzeService>();
 builder.Services.AddScoped<IScanProcessingService, ScanProcessingService>();
+builder.Services.AddScoped<PdfService>();
 
 // CORS
 builder.Services.AddCors(options =>

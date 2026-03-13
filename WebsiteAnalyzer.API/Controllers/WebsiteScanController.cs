@@ -5,6 +5,7 @@ using WebsiteAnalyzer.Application.DTOs;
 using WebsiteAnalyzer.Application.Interfaces;
 using WebsiteAnalyzer.Application.Services;
 using WebsiteAnalyzer.Domain.Enums;
+using WebsiteAnalyzer.Infrastructure.Services;
 
 namespace WebsiteAnalyzer.API.Controllers
 {
@@ -13,7 +14,6 @@ namespace WebsiteAnalyzer.API.Controllers
     public class WebsiteScanController : ControllerBase
     {
         private readonly IWebsiteScanRepository _scanRepository;
-
         public WebsiteScanController(IWebsiteScanRepository scanRepository)
         {
             _scanRepository = scanRepository;
@@ -60,6 +60,25 @@ namespace WebsiteAnalyzer.API.Controllers
                 return NotFound();
 
             return Ok(result);
+        }
+
+        [HttpGet("{scanId}/download")]
+        public async Task<IActionResult> DownloadReport(
+            int scanId,
+            [FromServices] PdfService pdfService)
+        {
+            var result = await _scanRepository.GetScanResultsAsync(scanId);
+
+            if (result == null)
+                return NotFound();
+
+            var pdf = pdfService.GenerateReport(result);
+
+            return File(
+                pdf,
+                "application/pdf",
+                $"ScanReport_{scanId}.pdf"
+            );
         }
     }
 }
