@@ -1,5 +1,4 @@
 ﻿using WebsiteAnalyzer.Application.DTOs;
-using WebsiteAnalyzer.Domain.Enums;
 
 namespace WebsiteAnalyzer.Application.Interfaces
 {
@@ -10,5 +9,6 @@ namespace WebsiteAnalyzer.Application.Interfaces
             string websiteUrl,
             string scanType);
         Task<List<ScanListDto>> GetUserScansAsync(int userId);
+        Task<ScanResultDto> GetScanResultsAsync(int scanId);
     }
 }

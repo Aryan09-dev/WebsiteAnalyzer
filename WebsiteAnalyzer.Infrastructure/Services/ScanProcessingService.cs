@@ -1,11 +1,7 @@
 ﻿using HtmlAgilityPack;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 using WebsiteAnalyzer.Application.Interfaces;
 using WebsiteAnalyzer.Domain.Entities;
 using WebsiteAnalyzer.Domain.Enums;
@@ -42,125 +38,29 @@ namespace WebsiteAnalyzer.Application.Services
 
             try
             {
-                string url = scan.Website_Url;
+                var pages = await GetPagesToScan(scan.Website_Url);
 
-                // =========================
-                // 1️⃣ REAL HTTP REQUEST
-                // =========================
-                var stopwatch = Stopwatch.StartNew();
-                var response = await _httpClient.GetAsync(url);
-                stopwatch.Stop();
+                int totalPerformance = 0;
+                int totalSecurity = 0;
+                int totalCodeQuality = 0;
 
-                var html = await response.Content.ReadAsStringAsync();
+                int pageCount = 0;
 
-                int loadTimeMs = (int)stopwatch.ElapsedMilliseconds;
-                int pageSizeKb = Encoding.UTF8.GetByteCount(html) / 1024;
-
-                // =========================
-                // 2️⃣ HTML PARSING
-                // =========================
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
-                int scripts = doc.DocumentNode.SelectNodes("//script[@src]")?.Count ?? 0;
-                int styles = doc.DocumentNode.SelectNodes("//link[@rel='stylesheet']")?.Count ?? 0;
-                int images = doc.DocumentNode.SelectNodes("//img")?.Count ?? 0;
-
-                int totalRequests = scripts + styles + images + 1;
-
-                int imagesWithoutAlt =
-                    doc.DocumentNode.SelectNodes("//img[not(@alt)]")?.Count ?? 0;
-
-                int inlineScripts =
-                    doc.DocumentNode.SelectNodes("//script[not(@src)]")?.Count ?? 0;
-
-                int inlineStyles =
-                    doc.DocumentNode.SelectNodes("//style")?.Count ?? 0;
-
-                int unminifiedJs =
-                    doc.DocumentNode.SelectNodes("//script[@src]")
-                        ?.Count(n => !n.GetAttributeValue("src", "").Contains(".min.")) ?? 0;
-
-                // =========================
-                // 3️⃣ SECURITY HEADERS
-                // =========================
-                var headers = response.Headers;
-
-                bool hasCsp = headers.Contains("Content-Security-Policy");
-                bool hasHsts = headers.Contains("Strict-Transport-Security");
-                bool hasXFrame = headers.Contains("X-Frame-Options");
-                bool hasXss = headers.Contains("X-XSS-Protection");
-                bool isHttps = url.StartsWith("https://");
-
-                // =========================
-                // 4️⃣ SAVE PERFORMANCE METRICS
-                // =========================
-                _context.Performance_Metrics.Add(new PerformanceMetric
+                foreach (var pageUrl in pages)
                 {
-                    Scan_Id = scanId,
-                    Page_Url = url,
-                    Load_Time_MS = loadTimeMs,
-                    Page_Size_KB = pageSizeKb,
-                    Total_Requests = totalRequests,
-                    Created_On = DateTime.UtcNow,
-                    Is_Active = true,
-                    Is_Deleted = false
-                });
+                    pageCount++;
 
-                // =========================
-                // 5️⃣ SAVE SECURITY HEADERS
-                // =========================
-                AddSecurityHeader(scanId, "Content-Security-Policy", hasCsp);
-                AddSecurityHeader(scanId, "Strict-Transport-Security", hasHsts);
-                AddSecurityHeader(scanId, "X-Frame-Options", hasXFrame);
-                AddSecurityHeader(scanId, "X-XSS-Protection", hasXss);
+                    var result = await AnalyzePage(scanId, pageUrl);
 
-                // =========================
-                // 6️⃣ SAVE AUTOMATED ISSUES
-                // =========================
-                if (imagesWithoutAlt > 0)
-                    AddIssue(scanId, "CodeQuality",
-                        "Images missing ALT attribute",
-                        $"{imagesWithoutAlt} images found without ALT attribute",
-                        Severity.Medium);
+                    totalPerformance += result.Performance;
+                    totalSecurity += result.Security;
+                    totalCodeQuality += result.CodeQuality;
+                }
 
-                if (inlineScripts > 0)
-                    AddIssue(scanId, "CodeQuality",
-                        "Inline JavaScript detected",
-                        "Inline JavaScript reduces maintainability",
-                        Severity.Low);
+                scan.Performance_Score = totalPerformance / pageCount;
+                scan.Security_Score = totalSecurity / pageCount;
+                scan.Code_Quality_Score = totalCodeQuality / pageCount;
 
-                if (!hasCsp)
-                    AddIssue(scanId, "Security",
-                        "Missing Content-Security-Policy",
-                        "CSP header is missing",
-                        Severity.High);
-
-                // =========================
-                // 7️⃣ SCORE CALCULATION
-                // =========================
-                int performanceScore = 100;
-                if (loadTimeMs > 3000) performanceScore -= 20;
-                if (pageSizeKb > 1024) performanceScore -= 20;
-                if (totalRequests > 30) performanceScore -= 20;
-                if (unminifiedJs > 0) performanceScore -= 10;
-
-                int securityScore = 100;
-                if (!isHttps) securityScore -= 30;
-                if (!hasCsp) securityScore -= 20;
-                if (!hasHsts) securityScore -= 20;
-
-                int codeQualityScore = 100;
-                if (imagesWithoutAlt > 0) codeQualityScore -= 10;
-                if (inlineScripts > 0) codeQualityScore -= 10;
-                if (inlineStyles > 0) codeQualityScore -= 10;
-
-                // =========================
-                // 8️⃣ UPDATE SCAN
-                // =========================
-                scan.Performance_Score = Math.Max(performanceScore, 0);
-                scan.Security_Score = Math.Max(securityScore, 0);
-                scan.Code_Quality_Score = Math.Max(codeQualityScore, 0);
                 scan.Scan_Status = ScanStatus.Completed;
                 scan.Modified_On = DateTime.UtcNow;
 
@@ -175,7 +75,242 @@ namespace WebsiteAnalyzer.Application.Services
         }
 
         // =========================
-        // HELPER METHODS
+        // PAGE DISCOVERY
+        // =========================
+
+        private async Task<List<string>> GetPagesToScan(string rootUrl)
+        {
+            var pages = new List<string> { rootUrl };
+
+            var html = await _httpClient.GetStringAsync(rootUrl);
+
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var links = doc.DocumentNode.SelectNodes("//a[@href]");
+
+            if (links != null)
+            {
+                foreach (var link in links)
+                {
+                    var href = link.GetAttributeValue("href", "");
+
+                    if (string.IsNullOrWhiteSpace(href))
+                        continue;
+
+                    if (href.StartsWith("/"))
+                        pages.Add(new Uri(new Uri(rootUrl), href).ToString());
+
+                    else if (href.StartsWith(rootUrl))
+                        pages.Add(href);
+
+                    if (pages.Count >= 5)
+                        break;
+                }
+            }
+
+            return pages.Distinct().ToList();
+        }
+
+        // =========================
+        // PAGE ANALYSIS
+        // =========================
+
+        private async Task<(int Performance, int Security, int CodeQuality)> AnalyzePage(int scanId, string pageUrl)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var response = await _httpClient.GetAsync(pageUrl);
+            stopwatch.Stop();
+
+            var html = await response.Content.ReadAsStringAsync();
+
+            int loadTimeMs = (int)stopwatch.ElapsedMilliseconds;
+            int pageSizeKb = Encoding.UTF8.GetByteCount(html) / 1024;
+
+            _context.Scan_Pages.Add(new ScanPage
+            {
+                Scan_Id = scanId,
+                Page_Url = pageUrl,
+                Http_Status_Code = (int)response.StatusCode,
+                Page_Load_Time_MS = loadTimeMs,
+                Created_On = DateTime.UtcNow,
+                Is_Active = true,
+                Is_Deleted = false
+            });
+
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            int scripts = doc.DocumentNode.SelectNodes("//script[@src]")?.Count ?? 0;
+            int styles = doc.DocumentNode.SelectNodes("//link[@rel='stylesheet']")?.Count ?? 0;
+            int images = doc.DocumentNode.SelectNodes("//img")?.Count ?? 0;
+
+            int totalRequests = scripts + styles + images + 1;
+
+            int imagesWithoutAlt =
+                doc.DocumentNode.SelectNodes("//img[not(@alt)]")?.Count ?? 0;
+
+            int inlineScripts =
+                doc.DocumentNode.SelectNodes("//script[not(@src)]")?.Count ?? 0;
+
+            int inlineStyles =
+                doc.DocumentNode.SelectNodes("//style")?.Count ?? 0;
+
+            int unminifiedJs =
+                doc.DocumentNode.SelectNodes("//script[@src]")
+                    ?.Count(n => !n.GetAttributeValue("src", "").Contains(".min.")) ?? 0;
+
+            var headers = response.Headers;
+
+            bool hasCsp = headers.Contains("Content-Security-Policy");
+            bool hasHsts = headers.Contains("Strict-Transport-Security");
+            bool hasXFrame = headers.Contains("X-Frame-Options");
+            bool hasXss = headers.Contains("X-XSS-Protection");
+            bool isHttps = pageUrl.StartsWith("https://");
+
+            _context.Performance_Metrics.Add(new PerformanceMetric
+            {
+                Scan_Id = scanId,
+                Page_Url = pageUrl,
+                Load_Time_MS = loadTimeMs,
+                Page_Size_KB = pageSizeKb,
+                Total_Requests = totalRequests,
+                Created_On = DateTime.UtcNow,
+                Is_Active = true,
+                Is_Deleted = false
+            });
+
+            AddSecurityHeader(scanId, "Content-Security-Policy", hasCsp);
+            AddSecurityHeader(scanId, "Strict-Transport-Security", hasHsts);
+            AddSecurityHeader(scanId, "X-Frame-Options", hasXFrame);
+            AddSecurityHeader(scanId, "X-XSS-Protection", hasXss);
+
+            if (imagesWithoutAlt > 0)
+                AddIssue(scanId, "CodeQuality",
+                    "Images missing ALT attribute",
+                    $"{imagesWithoutAlt} images without ALT on {pageUrl}",
+                    Severity.Medium);
+
+            if (inlineScripts > 0)
+                AddIssue(scanId, "CodeQuality",
+                    "Inline JavaScript detected",
+                    $"Inline JavaScript found on {pageUrl}",
+                    Severity.Low);
+
+            if (!hasCsp)
+                AddIssue(scanId, "Security",
+                    "Missing Content-Security-Policy",
+                    $"CSP header missing on {pageUrl}",
+                    Severity.High);
+
+            await DetectBrokenLinks(scanId, pageUrl, doc);
+            await DetectBrokenImages(scanId, pageUrl, doc);
+
+            int performanceScore = 100;
+            if (loadTimeMs > 3000) performanceScore -= 20;
+            if (pageSizeKb > 1024) performanceScore -= 20;
+            if (totalRequests > 30) performanceScore -= 20;
+            if (unminifiedJs > 0) performanceScore -= 10;
+
+            int securityScore = 100;
+            if (!isHttps) securityScore -= 30;
+            if (!hasCsp) securityScore -= 20;
+            if (!hasHsts) securityScore -= 20;
+
+            int codeQualityScore = 100;
+            if (imagesWithoutAlt > 0) codeQualityScore -= 10;
+            if (inlineScripts > 0) codeQualityScore -= 10;
+            if (inlineStyles > 0) codeQualityScore -= 10;
+
+            return (
+                Math.Max(performanceScore, 0),
+                Math.Max(securityScore, 0),
+                Math.Max(codeQualityScore, 0)
+            );
+        }
+
+        // =========================
+        // BUG DETECTION
+        // =========================
+
+        private async Task DetectBrokenLinks(int scanId, string pageUrl, HtmlDocument doc)
+        {
+            var links = doc.DocumentNode.SelectNodes("//a[@href]");
+
+            if (links == null) return;
+
+            foreach (var link in links.Take(5))
+            {
+                var href = link.GetAttributeValue("href", "");
+
+                if (string.IsNullOrWhiteSpace(href))
+                    continue;
+
+                string linkUrl = href.StartsWith("/")
+                    ? new Uri(new Uri(pageUrl), href).ToString()
+                    : href;
+
+                try
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Head, linkUrl);
+                    var response = await _httpClient.SendAsync(request);
+
+                    if (!response.IsSuccessStatusCode)
+                        AddIssue(scanId, "Bug",
+                            "Broken Link",
+                            $"Broken link detected: {linkUrl}",
+                            Severity.High);
+                }
+                catch
+                {
+                    AddIssue(scanId, "Bug",
+                        "Invalid Link",
+                        $"Invalid link detected: {linkUrl}",
+                        Severity.High);
+                }
+            }
+        }
+
+        private async Task DetectBrokenImages(int scanId, string pageUrl, HtmlDocument doc)
+        {
+            var images = doc.DocumentNode.SelectNodes("//img[@src]");
+
+            if (images == null) return;
+
+            foreach (var img in images.Take(5))
+            {
+                var src = img.GetAttributeValue("src", "");
+
+                if (string.IsNullOrWhiteSpace(src))
+                    continue;
+
+                string imgUrl = src.StartsWith("/")
+                    ? new Uri(new Uri(pageUrl), src).ToString()
+                    : src;
+
+                try
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Head, imgUrl);
+                    var response = await _httpClient.SendAsync(request);
+
+                    if (!response.IsSuccessStatusCode)
+                        AddIssue(scanId, "Bug",
+                            "Broken Image",
+                            $"Broken image detected: {imgUrl}",
+                            Severity.Medium);
+                }
+                catch
+                {
+                    AddIssue(scanId, "Bug",
+                        "Broken Image",
+                        $"Invalid image source: {imgUrl}",
+                        Severity.Medium);
+                }
+            }
+        }
+
+        // =========================
+        // HELPERS
         // =========================
 
         private void AddSecurityHeader(int scanId, string name, bool exists)

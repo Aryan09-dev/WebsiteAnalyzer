@@ -37,6 +37,7 @@ namespace WebsiteAnalyzer.API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetUserScans()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -48,6 +49,17 @@ namespace WebsiteAnalyzer.API.Controllers
 
             var scans = await _scanRepository.GetUserScansAsync(userId);
             return Ok(scans);
+        }
+
+        [HttpGet("{scanId}/results")]
+        public async Task<IActionResult> GetResults(int scanId)
+        {
+            var result = await _scanRepository.GetScanResultsAsync(scanId);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
         }
     }
 }

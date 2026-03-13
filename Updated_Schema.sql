@@ -1,1 +1,3 @@
-﻿
+﻿ALTER TABLE Automated_Issues
+ALTER COLUMN Severity INT
+GO
