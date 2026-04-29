@@ -11,5 +11,6 @@ namespace WebsiteAnalyzer.Application.Interfaces
     {
         Task<ManualBug> CreateAsync(ManualBug bug);
         Task<List<ManualBug>> GetByUserIdAsync(int userId);
+        Task<ManualBug?> UpdateAsync(int id, ManualBug bug);
     }
 }

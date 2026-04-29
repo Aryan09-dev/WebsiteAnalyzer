@@ -38,5 +38,23 @@ namespace WebsiteAnalyzer.Infrastructure.Repositories
                 .OrderByDescending(b => b.Created_On)
                 .ToListAsync();
         }
+
+        public async Task<ManualBug?> UpdateAsync(int id, ManualBug updatedBug)
+        {
+            var existing = await _context.Manual_Bugs.FindAsync(id);
+
+            if (existing == null || existing.Is_Deleted)
+                return null;
+
+            existing.Bug_Title = updatedBug.Bug_Title;
+            existing.Bug_Description = updatedBug.Bug_Description;
+            existing.Severity = updatedBug.Severity;
+            existing.Page_Url = updatedBug.Page_Url;
+            existing.Modified_On = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return existing;
+        }
     }
 }

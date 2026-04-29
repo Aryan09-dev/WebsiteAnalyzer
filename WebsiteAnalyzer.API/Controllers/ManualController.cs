@@ -67,5 +67,34 @@ namespace WebsiteAnalyzer.API.Controllers
                 data = bugs
             });
         }
+
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateBug(int id, [FromBody] CreateManualBugDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            var bug = new ManualBug
+            {
+                Bug_Title = dto.Bug_Title,
+                Bug_Description = dto.Bug_Description,
+                Severity = dto.Severity,
+                Page_Url = dto.Page_Url
+            };
+
+            var updated = await _manualBugRepository.UpdateAsync(id, bug);
+
+            if (updated == null)
+                return NotFound();
+
+            return Ok(new
+            {
+                message = "Bug updated successfully",
+                data = updated
+            });
+        }
     }
 }
