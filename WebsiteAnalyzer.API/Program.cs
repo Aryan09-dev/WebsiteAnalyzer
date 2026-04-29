@@ -22,6 +22,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ScanAnalyzeService>();
 builder.Services.AddScoped<IScanProcessingService, ScanProcessingService>();
 builder.Services.AddScoped<PdfService>();
+builder.Services.AddScoped<IManualBugRepository, ManualBugRepository>();
 
 // CORS
 builder.Services.AddCors(options =>
